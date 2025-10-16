@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===================================
+// CORE MODELS
+// ===================================
+
+// 1. Модель Ролей
+model Role {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique // ADMIN, CREATOR
+  users User[]
+}
+
+// 2. Модель Пользователей
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?
+  username  String   @unique
+  isActive  Boolean  @default(true)
+  
+  googleId  String?  @unique
+  facebookId String? @unique
+  
+  roleId    Int      @default(1)
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Связи с другими моделями 
+  inventories Inventory[]       // Инвентари, которыми владеет пользователь
+  accesses    InventoryAccess[] // Инвентари, к которым пользователь имеет право записи
+}
+
+// 3. Модель Инвентаризации (Inventory)
+// Добавляем минимальное определение
+model Inventory {
+  id          String            @id @default(cuid())
+  title       String
+  description String?
+  version     Int               @default(1) // Для оптимистической блокировки
+  
+  // Связь с владельцем
+  ownerId     String
+  owner       User              @relation(fields: [ownerId], references: [id])
+  
+  // Связи с Items и Accesses
+  items       Item[]
+  accesses    InventoryAccess[]
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+// 4. Модель Доступа к Инвентаризации (InventoryAccess)
+// Добавляем минимальное определение
+model InventoryAccess {
+  id            String    @id @default(cuid())
+  
+  inventoryId   String
+  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  // Композитный ключ, чтобы пользователь имел доступ к инвентарю только один раз
+  @@unique([inventoryId, userId])
+}
+
+// 5. Модель Item
+// Добавляем минимальное определение
+model Item {
+  id            String    @id @default(cuid())
+  inventoryId   String
+  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  
+  // Поле для Custom ID - ключевая "киллер-фича"
+  customId      String 
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Уникальность customId только в пределах одной Inventory
+  @@unique([inventoryId, customId])
+}
