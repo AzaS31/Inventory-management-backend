@@ -59,6 +59,7 @@ export const getProfile = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch profile" });
     }
 };
+
 export const logout = (req, res) => {
     res.clearCookie("token");
     res.json({ message: "Logged out successfully" });

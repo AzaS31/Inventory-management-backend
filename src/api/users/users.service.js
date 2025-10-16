@@ -6,20 +6,25 @@ export async function getAllUsers() {
     });
 }
 
-export async function updateUserRole(userId, roleId) {
-    return prisma.user.update({
-        where: { id: userId },
+export async function updateUsersRoleBatch(userIds, roleId) {
+    const result = await prisma.user.updateMany({
+        where: { id: { in: userIds } },
         data: { roleId },
     });
+    return result;
 }
 
-export async function toggleUserActive(userId, isActive) {
-    return prisma.user.update({
-        where: { id: userId },
+export async function toggleUsersActive(userIds, isActive) {
+    const result = await prisma.user.updateMany({
+        where: { id: { in: userIds } },
         data: { isActive },
     });
+    return result;
 }
 
-export async function deleteUser(userId) {
-    return prisma.user.delete({ where: { id: userId } });
+export async function deleteUsersBatch(userIds) {
+    const result = await prisma.user.deleteMany({
+        where: { id: { in: userIds } },
+    });
+    return result;
 }
