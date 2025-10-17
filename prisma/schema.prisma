@@ -26,74 +26,89 @@ model Role {
 
 // 2. Модель Пользователей
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String?
-  username  String   @unique
-  isActive  Boolean  @default(true)
-  
-  googleId  String?  @unique
-  facebookId String? @unique
-  
-  roleId    Int      @default(1)
-  role      Role     @relation(fields: [roleId], references: [id])
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String?
+  username   String   @unique
+  isActive   Boolean  @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Связи с другими моделями 
+  googleId   String?  @unique
+  facebookId String?  @unique
+
+  roleId     Int      @default(1)
+  role       Role     @relation(fields: [roleId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Связи
   inventories Inventory[]       // Инвентари, которыми владеет пользователь
-  accesses    InventoryAccess[] // Инвентари, к которым пользователь имеет право записи
+  accesses    InventoryAccess[] // Инвентари, к которым пользователь имеет доступ
+  comments    Comment[]         // Комментарии пользователя
 }
 
 // 3. Модель Инвентаризации (Inventory)
-// Добавляем минимальное определение
 model Inventory {
   id          String            @id @default(cuid())
   title       String
   description String?
-  version     Int               @default(1) // Для оптимистической блокировки
-  
-  // Связь с владельцем
+  isPublic    Boolean           @default(true) // публичный или приватный
+  version     Int               @default(1)    // для оптимистической блокировки
+
   ownerId     String
-  owner       User              @relation(fields: [ownerId], references: [id])
-  
-  // Связи с Items и Accesses
+  owner       User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Связи
   items       Item[]
   accesses    InventoryAccess[]
-  
+  comments    Comment[]
+
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
 
 // 4. Модель Доступа к Инвентаризации (InventoryAccess)
-// Добавляем минимальное определение
 model InventoryAccess {
   id            String    @id @default(cuid())
-  
+
   inventoryId   String
-  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  inventory     Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 
   userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  
-  // Композитный ключ, чтобы пользователь имел доступ к инвентарю только один раз
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role          String    @default("EDITOR") // тип доступа: VIEWER / EDITOR / OWNER
+
   @@unique([inventoryId, userId])
 }
 
-// 5. Модель Item
-// Добавляем минимальное определение
+// 5. Модель Предметов (Item)
 model Item {
   id            String    @id @default(cuid())
   inventoryId   String
-  inventory     Inventory @relation(fields: [inventoryId], references: [id])
-  
-  // Поле для Custom ID - ключевая "киллер-фича"
-  customId      String 
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Уникальность customId только в пределах одной Inventory
+  inventory     Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  customId      String   // уникальный ID внутри инвентаря
+  name          String   // имя предмета
+  description   String?  // описание
+  status        String   @default("available") // например: available, taken, damaged
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
   @@unique([inventoryId, customId])
+}
+
+// 6. Модель Комментариев (Comment)
+model Comment {
+  id          String    @id @default(cuid())
+  content     String
+
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
 }

@@ -7,6 +7,8 @@ import prisma from './config/database.js';
 import passport from 'passport';
 import "./config/passport.js";
 import session from "express-session";
+import inventoryRoutes from './routes/inventories.routes.js'; 
+import itemsRoutes from "./routes/items.routes.js";
 
 config();
 const app = express();
@@ -41,5 +43,7 @@ app.get('/api/health', async (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/inventories", inventoryRoutes);
+app.use("/api/items", itemsRoutes); 
 
 export default app;

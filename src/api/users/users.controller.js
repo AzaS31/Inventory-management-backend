@@ -37,7 +37,7 @@ export async function setActive(req, res) {
     try {
         const result = await userService.toggleUsersActive(userIds, isActive);
         res.json({
-            message: `${result.count} users updated successfully`,
+            message: `${result.count} users ${isActive ? "unblocked" : "blocked"} successfully`,
             count: result.count
         });
     } catch (err) {
