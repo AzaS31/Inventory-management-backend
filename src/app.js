@@ -4,6 +4,9 @@ import { config } from 'dotenv';
 import authRoutes from './routes/auth.routes.js';
 import usersRoutes from './routes/users.routes.js';
 import prisma from './config/database.js';
+import passport from 'passport';
+import "./config/passport.js";
+import session from "express-session";
 
 config();
 const app = express();
@@ -15,6 +18,17 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.get('/api/health', async (req, res) => {
   try {
