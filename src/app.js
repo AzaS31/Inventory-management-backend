@@ -9,6 +9,7 @@ import "./config/passport.js";
 import session from "express-session";
 import inventoryRoutes from './routes/inventories.routes.js'; 
 import itemsRoutes from "./routes/items.routes.js";
+import categoriesRouter from "./routes/categories.routes.js";
 
 config();
 const app = express();
@@ -45,5 +46,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/inventories", inventoryRoutes);
 app.use("/api/items", itemsRoutes); 
+app.use("/api/categories", categoriesRouter);
 
 export default app;

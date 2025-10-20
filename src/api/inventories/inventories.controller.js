@@ -22,8 +22,16 @@ export const getInventoryById = async (req, res) => {
 export const createInventory = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { title, description, isPublic } = req.body;
-        const newInventory = await inventoryService.create({ title, description, isPublic, ownerId: userId });
+        const { title, description, isPublic, categoryId } = req.body;
+
+        const newInventory = await inventoryService.create({
+            title,
+            description,
+            isPublic,
+            ownerId: userId,
+            categoryId,
+        });
+
         res.status(201).json(newInventory);
     } catch (error) {
         res.status(500).json({ message: error.message });

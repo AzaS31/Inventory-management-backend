@@ -1,53 +1,83 @@
 import prisma from "../../config/database.js";
 
-// Получить все публичные инвентари
 export const getAll = async () => {
     return prisma.inventory.findMany({
         where: { isPublic: true },
         include: {
             owner: { select: { username: true } },
-            items: true,
-            comments: true,
+            category: { select: { name: true } },
+            _count: { select: { items: true, comments: true } },
         },
         orderBy: { createdAt: "desc" },
     });
 };
 
-// Получить конкретный инвентарь
 export const getById = async (id) => {
     return prisma.inventory.findUnique({
         where: { id },
         include: {
             owner: { select: { username: true } },
-            items: true,
+            category: { select: { name: true } },
+            items: {
+                include: {
+                    customValues: {
+                        include: { customField: { select: { name: true, type: true } } },
+                    },
+                    likes: true,
+                },
+            },
             comments: {
                 include: {
                     author: { select: { username: true } },
                 },
                 orderBy: { createdAt: "desc" },
             },
+            customFields: true,
         },
     });
 };
 
-// Создать инвентарь
 export const create = async (data) => {
-    return prisma.inventory.create({ data });
+    const { title, description, isPublic, ownerId, categoryId } = data;
+
+    return prisma.inventory.create({
+        data: {
+            title,
+            description,
+            isPublic,
+            ownerId,
+            categoryId: categoryId || null,
+        },
+        include: {
+            owner: { select: { username: true } },
+            category: { select: { name: true } },
+        },
+    });
 };
 
-// Обновить (только если владелец)
 export const update = async (id, updates, userId) => {
     const existing = await prisma.inventory.findUnique({ where: { id } });
     if (!existing) throw new Error("Inventory not found");
     if (existing.ownerId !== userId) throw new Error("Not authorized");
 
+    const { title, description, isPublic, categoryId } = updates;
+
     return prisma.inventory.update({
         where: { id },
-        data: updates,
+        data: {
+            title,
+            description,
+            isPublic,
+            categoryId,
+            updatedAt: new Date(),
+        },
+        include: {
+            owner: { select: { username: true } },
+            category: { select: { name: true } },
+        },
     });
 };
 
-// Удалить (только если владелец)
 export const remove = async (id, userId) => {
     const existing = await prisma.inventory.findUnique({ where: { id } });
     if (!existing) throw new Error("Inventory not found");

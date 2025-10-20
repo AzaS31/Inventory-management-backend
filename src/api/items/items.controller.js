@@ -27,7 +27,8 @@ export const createItem = async (req, res) => {
         const newItem = await itemService.createItem(inventoryId, req.body);
         res.status(201).json(newItem);
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        const status = err.message.includes("Duplicate") ? 409 : 400;
+        res.status(status).json({ error: err.message });
     }
 };
 
