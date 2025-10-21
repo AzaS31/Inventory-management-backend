@@ -53,7 +53,6 @@ model User {
 model Category {
   id          String      @id @default(cuid())
   name        String      @unique
-  description String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   inventories Inventory[]
@@ -92,8 +91,6 @@ model InventoryAccess {
 
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  role          String    @default("EDITOR") // тип доступа: VIEWER / EDITOR / OWNER
 
   @@unique([inventoryId, userId])
 }

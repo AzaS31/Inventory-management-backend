@@ -9,6 +9,26 @@ export const getAllInventories = async (req, res) => {
     }
 };
 
+export const getMyInventories = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const inventories = await inventoryService.getMy(userId);
+        res.json(inventories);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getAccessibleInventories = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const inventories = await inventoryService.getAccessible(userId);
+        res.json(inventories);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const getInventoryById = async (req, res) => {
     try {
         const inventory = await inventoryService.getById(req.params.id);

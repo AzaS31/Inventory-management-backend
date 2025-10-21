@@ -12,6 +12,33 @@ export const getAll = async () => {
     });
 };
 
+export const getMy = async (userId) => {
+    return prisma.inventory.findMany({
+        where: { ownerId: userId },
+        include: {
+            owner: { select: { username: true } },
+            category: { select: { name: true } },
+            _count: { select: { items: true, comments: true } },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+};
+
+export const getAccessible = async (userId) => {
+    return prisma.inventory.findMany({
+        where: {
+            accesses: {
+                some: { userId }
+            },
+            ownerId: { not: userId } 
+        },
+        include: {
+            owner: { select: { id: true, username: true } },
+            category: { select: { id: true, name: true } },
+        },
+    });
+};
+
 export const getById = async (id) => {
     return prisma.inventory.findUnique({
         where: { id },
