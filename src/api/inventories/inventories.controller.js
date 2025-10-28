@@ -29,6 +29,26 @@ export const getAccessibleInventories = async (req, res) => {
     }
 };
 
+export const getUserInventoriesById = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const inventories = await inventoryService.getUserInventories(userId);
+        res.json(inventories);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getUserSharedInventoriesById = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const inventories = await inventoryService.getUserSharedInventories(userId);
+        res.json(inventories);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const getInventoryById = async (req, res) => {
     try {
         const inventory = await inventoryService.getById(req.params.id);
@@ -42,7 +62,7 @@ export const getInventoryById = async (req, res) => {
 export const createInventory = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { title, description, isPublic, categoryId } = req.body;
+        const { title, description, isPublic, categoryId, customIdFormat } = req.body;
 
         const newInventory = await inventoryService.create({
             title,
@@ -50,6 +70,7 @@ export const createInventory = async (req, res) => {
             isPublic,
             ownerId: userId,
             categoryId,
+            customIdFormat,
         });
 
         res.status(201).json(newInventory);

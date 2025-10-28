@@ -8,9 +8,11 @@ import passport from 'passport';
 import "./config/passport.js";
 import session from "express-session";
 import inventoryRoutes from './routes/inventories.routes.js'; 
-import itemsRoutes from "./routes/items.routes.js";
+import itemsRoutes from "./routes/itemsRoutes.js";
 import categoriesRouter from "./routes/categories.routes.js";
 import inventoryAccessRoutes from "./routes/inventoryAccessRoutes.js";
+import customFieldRoutes from "./routes/customFieldRoutes.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 config();
 const app = express();
@@ -49,5 +51,8 @@ app.use("/api/inventories", inventoryRoutes);
 app.use("/api/items", itemsRoutes); 
 app.use("/api/categories", categoriesRouter);
 app.use("/api/access", inventoryAccessRoutes);
+app.use("/api/custom-fields", customFieldRoutes);
+
+app.use(errorHandler);
 
 export default app;

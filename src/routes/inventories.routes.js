@@ -4,6 +4,8 @@ import {
     getAllInventories,
     getMyInventories,
     getAccessibleInventories,
+    getUserInventoriesById,
+    getUserSharedInventoriesById,
     getInventoryById,
     createInventory,
     updateInventory,
@@ -15,6 +17,8 @@ const router = express.Router();
 router.get("/", getAllInventories);
 router.get("/my", requireAuth, getMyInventories);
 router.get("/shared", requireAuth, getAccessibleInventories);
+router.get("/user/:userId", getUserInventoriesById);
+router.get("/user/:userId/shared", getUserSharedInventoriesById);
 router.get("/:id", getInventoryById);
 
 router.post("/", requireAuth, createInventory);

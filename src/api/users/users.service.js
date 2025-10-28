@@ -28,3 +28,29 @@ export async function deleteUsersBatch(userIds) {
     });
     return result;
 }
+
+export async function getUserById(id) {
+    return prisma.user.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            username: true,
+            email: true,
+            isActive: true,
+            roleId: true,
+            role: { select: { name: true } },
+            inventories: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    isPublic: true,
+                    categoryId: true,
+                    _count: { select: { items: true } },
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            },
+        },
+    });
+}

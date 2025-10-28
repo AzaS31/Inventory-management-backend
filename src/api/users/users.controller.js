@@ -59,3 +59,17 @@ export async function removeUser(req, res) {
         res.status(500).json({ message: "Failed to delete users", error: err.message });
     }
 }
+
+export async function getUser(req, res) {
+    const { id } = req.params;
+
+    if (!id) return res.status(400).json({ message: "User ID is required" });
+
+    try {
+        const user = await userService.getUserById(id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: "Failed to fetch user", error: err.message });
+    }
+}
