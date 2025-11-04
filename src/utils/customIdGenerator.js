@@ -6,41 +6,54 @@ export async function generateCustomId(inventoryId, formatParts) {
     if (!formatParts || !Array.isArray(formatParts)) {
         throw new Error("customIdFormat must be a valid JSON array");
     }
-    
-    let customId = "";
+
+    const hasDate = formatParts.some(p => p.type === "DATE");
+    const hasUnique = formatParts.some(p =>
+        ["SEQ", "RAND6", "RAND9", "RAND20", "RAND32", "GUID"].includes(p.type)
+    );
+
+    if (hasDate && !hasUnique) {
+        throw new Error("Invalid customIdFormat: DATE must be combined with SEQ, RAND, or GUID for uniqueness.");
+    }
+
+    if (!hasDate && !hasUnique) {
+        throw new Error("Invalid customIdFormat: must include at least one unique part (SEQ, RAND, or GUID).");
+    }
+
+    const parts = [];
 
     for (const part of formatParts) {
         switch (part.type) {
             case "TEXT":
-                customId += part.value ?? "";
+                parts.push(part.value ?? "");
                 break;
 
             case "RAND6":
-                customId += Math.floor(100000 + Math.random() * 900000).toString();
+                parts.push(Math.floor(100000 + Math.random() * 900000).toString());
                 break;
 
             case "RAND9":
-                customId += Math.floor(100000000 + Math.random() * 900000000).toString();
+                parts.push(Math.floor(100000000 + Math.random() * 900000000).toString());
                 break;
 
             case "RAND20":
-                customId += Math.floor(Math.random() * 1048576).toString();
+                parts.push(Math.floor(Math.random() * 1048576).toString());
                 break;
 
             case "RAND32":
-                customId += Math.floor(Math.random() * 4294967296).toString();
+                parts.push(Math.floor(Math.random() * 4294967296).toString());
                 break;
 
             case "GUID":
-                customId += crypto.randomUUID();
+                parts.push(crypto.randomUUID());
                 break;
 
             case "DATE":
-                customId += dayjs().format(part.format || "YYYYMMDD");
+                parts.push(dayjs().format(part.format || "YYYYMMDD"));
                 break;
 
             case "SEQ":
-                customId += await generateSequence(inventoryId, part.digits || 6);
+                parts.push(await generateSequence(inventoryId, part.digits || 6));
                 break;
 
             default:
@@ -48,23 +61,18 @@ export async function generateCustomId(inventoryId, formatParts) {
         }
     }
 
-    return customId;
+    return parts.join("-");
 }
 
 async function generateSequence(inventoryId, digits = 6) {
-    const lastItem = await prisma.item.findFirst({
-        where: { inventoryId },
-        orderBy: { createdAt: "desc" },
-        select: { customId: true },
+    const counter = await prisma.$transaction(async (tx) => {
+        const updated = await tx.sequenceCounter.upsert({
+            where: { inventoryId },
+            update: { currentValue: { increment: 1 } },
+            create: { inventoryId, currentValue: 1 },
+        });
+        return await tx.sequenceCounter.findUnique({ where: { inventoryId } });
     });
 
-    let lastSeq = 0;
-
-    if (lastItem && lastItem.customId) {
-        const match = lastItem.customId.match(/\d+$/);
-        if (match) lastSeq = parseInt(match[0], 10);
-    }
-
-    const nextSeq = lastSeq + 1;
-    return nextSeq.toString().padStart(digits, "0");
+    return counter.currentValue.toString().padStart(digits, "0");
 }

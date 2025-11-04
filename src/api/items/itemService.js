@@ -58,7 +58,7 @@ export const itemService = {
                         creatorId,
                         customValues: {
                             create: customFieldValues.map(cv => ({
-                                customFieldId: cv.fieldId,
+                                customFieldId: cv.customFieldId,
                                 value: cv.value,
                             })),
                         },
@@ -91,10 +91,10 @@ export const itemService = {
                     customValues: {
                         upsert: customFieldValues.map(cv => ({
                             where: {
-                                itemId_customFieldId: { itemId, customFieldId: cv.fieldId },
+                                itemId_customFieldId: { itemId, customFieldId: cv.customFieldId },
                             },
                             update: { value: cv.value },
-                            create: { customFieldId: cv.fieldId, value: cv.value },
+                            create: { customFieldId: cv.customFieldId, value: cv.value },
                         })),
                     },
                 },
@@ -130,20 +130,16 @@ export const itemService = {
         }
     },
 
-    async addLike(itemId, userId) {
-        try {
-            await prisma.$transaction([
-                prisma.itemLike.create({ data: { itemId, userId } }),
-                prisma.item.update({
-                    where: { id: itemId },
-                    data: { likesCount: { increment: 1 } },
-                }),
-            ]);
-        } catch (error) {
-            if (error.code === "P2002") {
-                throw new ConflictError("You have already liked this item.");
-            }
-            throw error;
-        }
+    async deleteBatch(inventoryId, itemIds = []) {
+        if (!Array.isArray(itemIds) || itemIds.length === 0) return { count: 0 };
+
+        const deleted = await prisma.item.deleteMany({
+            where: {
+                id: { in: itemIds },
+                inventoryId,
+            },
+        });
+
+        return deleted; 
     },
 };

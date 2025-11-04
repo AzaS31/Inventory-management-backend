@@ -17,14 +17,12 @@ datasource db {
 // CORE MODELS
 // ===================================
 
-// 1. Модель Ролей
 model Role {
   id    Int    @id @default(autoincrement())
-  name  String @unique // ADMIN, CREATOR
+  name  String @unique 
   users User[]
 }
 
-// 2. Модель Пользователей
 model User {
   id       String  @id @default(cuid())
   email    String  @unique
@@ -45,13 +43,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Связи
-  inventories Inventory[] // Инвентари, которыми владеет пользователь
-  accesses    InventoryAccess[] // Инвентари, к которым пользователь имеет доступ
-  comments    Comment[] // Комментарии пользователя
+  inventories Inventory[] 
+  accesses    InventoryAccess[] 
+  comments    Comment[] 
 }
 
-// 3. Модель Категории
 model Category {
   id          String      @id @default(cuid())
   name        String      @unique
@@ -60,7 +56,6 @@ model Category {
   inventories Inventory[]
 }
 
-// 4. Модель Инвентаризации (Inventory)
 model Inventory {
   id          String  @id @default(cuid())
   title       String
@@ -81,14 +76,13 @@ model Inventory {
   accesses     InventoryAccess[]
   comments     Comment[]
   customFields CustomField[]
-
   tags InventoryTag[]
-
+  sequenceCounter SequenceCounter?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// 5. Модель Доступа к Инвентаризации (InventoryAccess)
 model InventoryAccess {
   id String @id @default(cuid())
 
@@ -98,12 +92,9 @@ model InventoryAccess {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  canEdit Boolean @default(false)
-
   @@unique([inventoryId, userId])
 }
 
-// 6. Модель Предметов (Item)
 model Item {
   id          String    @id @default(cuid())
   inventoryId String
@@ -112,7 +103,6 @@ model Item {
   customId    String
   name        String
   description String?
-  status      String  @default("available")
 
   likes        ItemLike[]
   likesCount   Int                @default(0)
@@ -130,7 +120,6 @@ model Item {
   @@index([inventoryId])
 }
 
-// 7. Модель Комментариев (Comment)
 model Comment {
   id      String @id @default(cuid())
   content String
@@ -147,7 +136,6 @@ model Comment {
   @@index([inventoryId])
 }
 
-// 8. Модель кастомных полей инвентаря
 model CustomField {
   id          String    @id @default(cuid())
   inventoryId String
@@ -167,7 +155,6 @@ model CustomField {
   @@unique([inventoryId, name])
 }
 
-// 9. Модель значения кастомного поля
 model CustomFieldValue {
   id            String      @id @default(cuid())
   itemId        String
@@ -181,7 +168,6 @@ model CustomFieldValue {
   @@unique([itemId, customFieldId])
 }
 
-// 10. Модель типов 
 enum FieldType {
   SINGLE_LINE
   MULTI_LINE
@@ -190,7 +176,6 @@ enum FieldType {
   BOOLEAN
 }
 
-// 11. Модель лайков
 model ItemLike {
   id String @id @default(cuid())
 
@@ -202,18 +187,16 @@ model ItemLike {
 
   createdAt DateTime @default(now())
 
-  @@unique([itemId, userId]) // один лайк от одного пользователя
-  @@index([userId]) // ускоряет выборку лайков по пользователю
+  @@unique([itemId, userId]) 
+  @@index([userId]) 
 }
 
-// 12. Модель тегов
 model Tag {
   id          String         @id @default(cuid())
   name        String         @unique
   inventories InventoryTag[]
 }
 
-// 13. 
 model InventoryTag {
   inventoryId String
   inventory   Inventory @relation(fields: [inventoryId], references: [id])
@@ -221,4 +204,16 @@ model InventoryTag {
   tag         Tag       @relation(fields: [tagId], references: [id])
 
   @@id([inventoryId, tagId])
+}
+
+model SequenceCounter {
+  id           String   @id @default(cuid())
+  inventoryId  String
+  currentValue Int      @default(0)
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  inventory    Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  @@unique([inventoryId]) 
 }

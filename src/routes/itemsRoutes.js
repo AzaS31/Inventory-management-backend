@@ -9,6 +9,6 @@ router.get("/:inventoryId/:id", itemController.getById);
 router.post("/:inventoryId/items", requireAuth, itemController.create);
 router.put("/:inventoryId/:id", requireAuth, itemController.update);
 router.delete("/:inventoryId/:id", requireAuth, itemController.delete);
-router.post("./items/:id/like", requireAuth, itemController.addLike);
+router.post("/:inventoryId/delete-batch", requireAuth, itemController.deleteBatch);
 
 export default router;

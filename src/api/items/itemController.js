@@ -15,7 +15,9 @@ export const itemController = {
         try {
             const { id } = req.params;
             const item = await itemService.getById(id, {
-                customValues: true,
+                customValues: {
+                    include: { customField: true }
+                },
                 inventory: true,
                 creator: { select: { username: true } },
             });
@@ -60,12 +62,12 @@ export const itemController = {
         }
     },
 
-    async addLike(req, res, next) {
+    async deleteBatch(req, res, next) {
         try {
-            const { id } = req.params;
-            const userId = req.user?.id;
-            await itemService.addLike(id, userId);
-            return res.json({ message: "Item liked successfully." });
+            const { inventoryId } = req.params;
+            const { ids } = req.body; 
+            const result = await itemService.deleteBatch(inventoryId, ids);
+            return res.json({ deletedCount: result.count });
         } catch (err) {
             next(err);
         }

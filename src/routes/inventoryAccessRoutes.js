@@ -1,15 +1,11 @@
 import express from "express";
 import { requireAuth } from "../middlewares/requireAuth.js";
-import {
-    addAccess,
-    removeAccess,
-    listAccess,
-} from "../api/inventoryAccess/inventoryAccess.controller.js";
+import { inventoryAccessController } from "../api/inventoryAccess/inventoryAccessController.js";
 
 const router = express.Router();
 
-router.post("/", requireAuth, addAccess);
-router.delete("/:inventoryId/:userId", requireAuth, removeAccess);
-router.get("/:inventoryId", requireAuth, listAccess);
+router.post("/", requireAuth, inventoryAccessController.addAccess);
+router.get("/:inventoryId", requireAuth, inventoryAccessController.getAccessList);
+router.delete("/:inventoryId/:userId", requireAuth, inventoryAccessController.removeAccess);
 
 export default router;

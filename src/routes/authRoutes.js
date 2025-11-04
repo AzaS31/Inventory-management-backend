@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUser, loginUser, getProfile, logout } from "../api/auth/auth.controller.js";
+import { authController } from "../api/auth/authController.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 import { config } from "dotenv";
 import passport from "passport";
@@ -9,10 +9,10 @@ config();
 
 const router = express.Router();
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-router.get("/profile", requireAuth, getProfile);
-router.get("/logout", logout);
+router.post("/register", authController.register);
+router.post("/login", authController.login);
+router.get("/profile", requireAuth, authController.getProfile);
+router.get("/logout", authController.logout);
 
 // === GOOGLE AUTH ===
 router.get(

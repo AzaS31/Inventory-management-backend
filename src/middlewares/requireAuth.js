@@ -16,13 +16,14 @@ export const requireAuth = async (req, res, next) => {
         id: true,
         username: true,
         email: true,
+        isActive: true,
         role: { select: { name: true } }
       }
     });
 
     if (!user) return res.status(401).json({ message: "Unauthorized" });
 
-    req.user = user; 
+    req.user = user;
     next();
   } catch (err) {
     console.error(err);

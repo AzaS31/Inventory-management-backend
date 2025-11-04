@@ -1,17 +1,20 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
-import authRoutes from './routes/auth.routes.js';
-import usersRoutes from './routes/users.routes.js';
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import prisma from './config/database.js';
 import passport from 'passport';
 import "./config/passport.js";
 import session from "express-session";
-import inventoryRoutes from './routes/inventories.routes.js'; 
+import inventoryRoutes from './routes/inventoryRoutes.js'; 
 import itemsRoutes from "./routes/itemsRoutes.js";
-import categoriesRouter from "./routes/categories.routes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
 import inventoryAccessRoutes from "./routes/inventoryAccessRoutes.js";
 import customFieldRoutes from "./routes/customFieldRoutes.js";
+import itemLikeRoutes from "./routes/itemLikeRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
+import searchRoutes from "./routes/searchRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 config();
@@ -46,12 +49,15 @@ app.get('/api/health', async (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/users", usersRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/inventories", inventoryRoutes);
 app.use("/api/items", itemsRoutes); 
-app.use("/api/categories", categoriesRouter);
-app.use("/api/access", inventoryAccessRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/inventory-access", inventoryAccessRoutes);
 app.use("/api/custom-fields", customFieldRoutes);
+app.use("/api/item-likes", itemLikeRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/search", searchRoutes);
 
 app.use(errorHandler);
 
