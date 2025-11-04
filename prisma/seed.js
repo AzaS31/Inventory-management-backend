@@ -1,22 +1,30 @@
 import prisma from '../src/config/database.js';
 
 async function main() {
-    console.log('Seeding roles...');
+    const categories = [
+        { name: "Fiction" },
+        { name: "Science/Research" },
+        { name: "Education/Textbook" },
+        { name: "Reference" },
+        { name: "Professional/Tech" },
+        { name: "Children" },
+        { name: "Other" },
+    ];
 
-    await prisma.role.createMany({
-        data: [
-            { id: 1, name: 'CREATOR' },
-            { id: 2, name: 'ADMIN' },
-        ],
-        skipDuplicates: true, 
-    });
+    for (const category of categories) {
+        await prisma.category.upsert({
+            where: { name: category.name },
+            update: {},
+            create: { name: category.name },
+        });
+    }
 
-    console.log('Seeding finished.');
+    console.log("✅ Categories seeded successfully!");
 }
 
 main()
-    .catch((e) => {
-        console.error(e);
+    .catch((error) => {
+        console.error("❌ Error seeding categories:", error);
         process.exit(1);
     })
     .finally(async () => {

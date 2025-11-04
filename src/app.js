@@ -15,6 +15,7 @@ import customFieldRoutes from "./routes/customFieldRoutes.js";
 import itemLikeRoutes from "./routes/itemLikeRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
+import tagRoutes from "./routes/tagRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 config();
@@ -58,6 +59,7 @@ app.use("/api/custom-fields", customFieldRoutes);
 app.use("/api/item-likes", itemLikeRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/tags", tagRoutes);
 
 app.use(errorHandler);
 
