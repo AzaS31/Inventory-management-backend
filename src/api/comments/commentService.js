@@ -1,4 +1,4 @@
-import prisma from "../../config/database.js";
+import { commentRepository } from "./commentRepository.js";
 import { BadRequestError, NotFoundError, UnauthorizedError } from "../../utils/errors.js";
 
 export const commentService = {
@@ -7,46 +7,19 @@ export const commentService = {
             throw new BadRequestError("The comment cannot be empty.");
         }
 
-        const comment = await prisma.comment.create({
-            data: {
-                content,
-                inventoryId,
-                authorId: userId,
-            },
-            include: {
-                author: { select: { id: true, username: true } },
-            },
-        });
-
-        return comment;
+        return commentRepository.create({ content, inventoryId, authorId: userId });
     },
 
     async getByInventoryId(inventoryId) {
-        const comments = await prisma.comment.findMany({
-            where: { inventoryId },
-            include: {
-                author: { select: { id: true, username: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
-
-        return comments;
+        return commentRepository.findByInventoryId(inventoryId);
     },
 
     async delete(commentId, userId) {
-        const comment = await prisma.comment.findUnique({
-            where: { id: commentId },
-        });
+        const comment = await commentRepository.findById(commentId);
+        if (!comment) throw new NotFoundError("Comment not found.");
+        if (comment.authorId !== userId) throw new UnauthorizedError("You are not allowed to delete this comment.");
 
-        if (!comment) {
-            throw new NotFoundError("Comment not found.");
-        }
-
-        if (comment.authorId !== userId) {
-            throw new UnauthorizedError("You are not allowed to delete this comment.");
-        }
-
-        await prisma.comment.delete({ where: { id: commentId } });
+        await commentRepository.deleteById(commentId);
         return { message: "Comment deleted successfully." };
     },
 };

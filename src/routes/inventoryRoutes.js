@@ -4,7 +4,7 @@ import { inventoryController } from "../api/inventories/inventoryController.js";
 
 const router = express.Router();
 
-router.get("/", inventoryController.getAll);
+router.get("/latest", inventoryController.getLatest);
 router.get("/top5", inventoryController.getTopFive);
 router.get("/my", requireAuth, inventoryController.getMy);
 router.get("/shared", requireAuth, inventoryController.getAccessibleToMe);

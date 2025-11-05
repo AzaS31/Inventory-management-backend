@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import prisma from "../../config/database.js";
+import { authRepository } from "./authRepository.js";
 import {
     BadRequestError,
     ConflictError,
@@ -12,15 +12,17 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 export const authService = {
     async registerUser({ username, email, password }) {
-        const existing = await prisma.user.findUnique({ where: { email } });
+        const existing = await authRepository.findByEmail(email);
         if (existing) throw new ConflictError("Email already in use");
 
         if (!password) throw new BadRequestError("Password is required");
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = await prisma.user.create({
-            data: { username, email, password: hashedPassword },
+        const newUser = await authRepository.createUser({
+            username,
+            email,
+            password: hashedPassword,
         });
 
         const token = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: "7d" });
@@ -32,7 +34,7 @@ export const authService = {
     },
 
     async loginUser({ email, password }) {
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await authRepository.findByEmail(email);
         if (!user) throw new NotFoundError("User not found");
 
         if (!user.password)
@@ -50,16 +52,7 @@ export const authService = {
     },
 
     async getUserProfile(userId) {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                role: { select: { name: true } },
-            },
-        });
-
+        const user = await authRepository.findById(userId);
         if (!user) throw new NotFoundError("User profile not found");
 
         return user;

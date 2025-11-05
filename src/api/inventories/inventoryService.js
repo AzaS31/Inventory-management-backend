@@ -1,231 +1,86 @@
-import prisma from "../../config/database.js";
+import { inventoryRepository } from "./inventoryRepository.js";
 import { BadRequestError, NotFoundError, UnauthorizedError, ConflictError } from "../../utils/errors.js";
 
 export const inventoryService = {
-    async getAll() {
-        return prisma.inventory.findMany({
-            where: { isPublic: true },
-            include: {
-                owner: { select: { username: true } },
-                category: { select: { name: true } },
-                _count: { select: { items: true, comments: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
+    async getLatest(limit = 10) {
+        return inventoryRepository.findLatest(limit);
     },
 
     async getTopFive() {
-        return prisma.inventory.findMany({
-            where: { isPublic: true },
-            take: 5,
-            orderBy: {
-                items: { _count: "desc" },
-            },
-            include: {
-                owner: { select: { username: true } },
-                category: { select: { name: true } },
-                _count: { select: { items: true } },
-            },
-        });
+        return inventoryRepository.findTopFive();
     },
 
     async getInventoriesById(userId) {
-        return prisma.inventory.findMany({
-            where: { ownerId: userId },
-            include: {
-                owner: { select: { username: true } },
-                category: { select: { name: true } },
-                _count: { select: { items: true, comments: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
+        return inventoryRepository.findByOwner(userId);
     },
 
     async getAccessibleInventoriesById(userId) {
-        return prisma.inventory.findMany({
-            where: {
-                OR: [
-                    {
-                        accesses: { some: { userId } },
-                        ownerId: { not: userId },
-                    },
-                    {
-                        isPublic: true,
-                        ownerId: { not: userId },
-                    },
-                ],
-            },
-            include: {
-                owner: { select: { id: true, username: true } },
-                category: { select: { id: true, name: true } },
-                _count: { select: { items: true, comments: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
+        return inventoryRepository.findAccessible(userId);
     },
 
     async getInventoryById(id) {
-        const inventory = await prisma.inventory.findUnique({
-            where: { id },
-            include: {
-                owner: { select: { username: true } },
-                category: { select: { name: true } },
-                items: {
-                    include: {
-                        customValues: {
-                            include: { customField: { select: { name: true, type: true } } },
-                        },
-                        likes: true,
-                    },
-                },
-                comments: {
-                    include: { author: { select: { username: true } } },
-                    orderBy: { createdAt: "desc" },
-                },
-                customFields: true,
-                accesses: {
-                    select: { user: { select: { id: true, username: true, email: true } } },
-                },
-            },
-        });
-
-        if (!inventory) {
-            throw new NotFoundError("Inventory not found");
-        }
-
+        const inventory = await inventoryRepository.findById(id);
+        if (!inventory) throw new NotFoundError("Inventory not found");
         return inventory;
     },
 
     async create(data) {
-        const { title, description, isPublic, ownerId, categoryId, customIdFormat } = data;
-
-        if (!title || !ownerId) {
-            throw new BadRequestError("Title and ownerId are required.");
-        }
+        const { title, ownerId, description, isPublic, categoryId, customIdFormat } = data;
+        if (!title || !ownerId) throw new BadRequestError("Title and ownerId are required.");
 
         try {
-            return await prisma.inventory.create({
-                data: {
-                    title,
-                    description,
-                    isPublic,
-                    ownerId,
-                    categoryId: categoryId || null,
-                    customIdFormat,
-                },
-                include: {
-                    owner: { select: { username: true } },
-                    category: { select: { name: true } },
-                },
-            });
+            return await inventoryRepository.create({ title, ownerId, description, isPublic, categoryId: categoryId || null, customIdFormat });
         } catch (error) {
-            if (error.code === "P2002") {
-                throw new ConflictError("Inventory with the same title already exists.");
-            }
+            if (error.code === "P2002") throw new ConflictError("Inventory with the same title already exists.");
             throw error;
         }
     },
 
     async update(id, updates, userId) {
-        const existing = await prisma.inventory.findUnique({
-            where: { id },
-            include: {
-                accesses: { where: { userId } },
-            },
-        });
-
+        const existing = await inventoryRepository.findById(id);
         if (!existing) throw new NotFoundError("Inventory not found");
 
         const isOwner = existing.ownerId === userId;
-        const hasEditAccess = existing.accesses.length > 0;
+        const hasEditAccess = existing.accesses.some(a => a.user.id === userId);
 
-        if (!isOwner && !hasEditAccess) {
-            throw new UnauthorizedError("You are not authorized to edit this inventory.");
-        }
+        if (!isOwner && !hasEditAccess) throw new UnauthorizedError("You are not authorized to edit this inventory.");
 
-        const { title, description, isPublic, categoryId } = updates;
-
-        const data = {
-            title,
-            description,
-            isPublic,
-            updatedAt: new Date(),
-        };
-
-        if (categoryId) data.categoryId = categoryId;
-
-        return prisma.inventory.update({
-            where: { id },
-            data,
-            include: {
-                owner: { select: { username: true } },
-                category: { select: { name: true } },
-            },
-        });
+        const data = { ...updates, updatedAt: new Date() };
+        return inventoryRepository.update(id, data);
     },
 
-    async delete(id, userId) {
-        const existing = await prisma.inventory.findUnique({ where: { id } });
-
+    async delete(id, userId, isAdmin = false) {
+        const existing = await inventoryRepository.findById(id);
         if (!existing) throw new NotFoundError("Inventory not found");
-        if (existing.ownerId !== userId) {
-            throw new UnauthorizedError("You are not authorized to delete this inventory.");
-        }
+        if (!isAdmin && existing.ownerId !== userId) throw new UnauthorizedError("You are not authorized to delete this inventory.");
 
-        return prisma.inventory.delete({ where: { id } });
+        await inventoryRepository.deleteInventoryTags([id]);
+        return inventoryRepository.deleteById(id);
     },
 
-    async deleteBatch(inventoryIds, userId) {
-        try {
-            const inventories = await prisma.inventory.findMany({
-                where: { id: { in: inventoryIds } },
-                select: { id: true, ownerId: true },
-            });
-
-            const unauthorized = inventories.some(inv => inv.ownerId !== userId);
-            if (unauthorized) {
-                throw new UnauthorizedError("You are not authorized to delete some of these inventories.");
-            }
-
-            const result = await prisma.inventory.deleteMany({
-                where: { id: { in: inventoryIds } },
-            });
-
-            if (result.count === 0) {
-                throw new NotFoundError("No inventories were deleted.");
-            }
-
-            return { message: `Deleted ${result.count} inventories successfully.` };
-        } catch (error) {
-            throw error.isOperational ? err : new BadRequestError("Failed to delete inventories.");
+    async deleteBatch(inventoryIds, userId, userRole) {
+        const inventories = await inventoryRepository.findByOwner(userId); // or findMany by ids
+        if (userRole !== "ADMIN") {
+            const unauthorized = inventories.some(inv => inventoryIds.includes(inv.id) && inv.ownerId !== userId);
+            if (unauthorized) throw new UnauthorizedError("You are not authorized to delete some of these inventories.");
         }
+
+        await inventoryRepository.deleteInventoryTags(inventoryIds);
+        const result = await inventoryRepository.deleteBatch(inventoryIds);
+        if (result.count === 0) throw new NotFoundError("No inventories were deleted.");
+
+        return { message: `Deleted ${result.count} inventories successfully.` };
     },
 
     async updateCustomIdFormat(id, customIdFormat, userId) {
-        const existing = await prisma.inventory.findUnique({
-            where: { id },
-            include: { accesses: { where: { userId } } },
-        });
-
+        const existing = await inventoryRepository.findById(id);
         if (!existing) throw new NotFoundError("Inventory not found");
 
         const isOwner = existing.ownerId === userId;
-        const hasEditAccess = existing.accesses.length > 0;
+        const hasEditAccess = existing.accesses.some(a => a.user.id === userId);
 
-        if (!isOwner && !hasEditAccess) {
-            throw new UnauthorizedError("You are not authorized to update custom ID format.");
-        }
+        if (!isOwner && !hasEditAccess) throw new UnauthorizedError("You are not authorized to update custom ID format.");
 
-        return prisma.inventory.update({
-            where: { id },
-            data: {
-                customIdFormat,
-                updatedAt: new Date(),
-            },
-            include: {
-                owner: { select: { username: true } },
-                category: { select: { name: true } },
-            },
-        });
+        return inventoryRepository.update(id, { customIdFormat, updatedAt: new Date() });
     },
 };

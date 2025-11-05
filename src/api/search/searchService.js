@@ -1,50 +1,18 @@
-import prisma from "../../config/database.js";
+import { searchRepository } from "./searchRepository.js";
+import { BadRequestError } from "../../utils/errors.js";
 
 export const searchService = {
     async search(query, user) {
+        if (!query || query.trim() === "") {
+            throw new BadRequestError("Search query cannot be empty");
+        }
+
         const isGuest = !user;
 
-        const inventories = await prisma.inventory.findMany({
-            where: {
-                AND: [
-                    isGuest ? { isPublic: true } : {},
-                    {
-                        OR: [
-                            { title: { contains: query, mode: "insensitive" } },
-                            { description: { contains: query, mode: "insensitive" } },
-                            { tags: { some: { tag: { name: { contains: query, mode: "insensitive" } } } } },
-                        ],
-                    },
-                ],
-            },
-            include: {
-                owner: { select: { username: true } },
-                category: true,
-                tags: { include: { tag: true } },
-            },
-            take: 20,
-        });
-
-        const items = await prisma.item.findMany({
-            where: {
-                OR: [
-                    { name: { contains: query, mode: "insensitive" } },
-                    { description: { contains: query, mode: "insensitive" } },
-                    {
-                        customValues: {
-                            some: { value: { contains: query, mode: "insensitive" } },
-                        },
-                    },
-                ],
-                inventory: isGuest ? { isPublic: true } : {},
-            },
-            include: {
-                inventory: {
-                    select: { id: true, title: true, isPublic: true },
-                },
-            },
-            take: 20,
-        });
+        const [inventories, items] = await Promise.all([
+            searchRepository.findInventories(query, isGuest),
+            searchRepository.findItems(query, isGuest),
+        ]);
 
         return { inventories, items };
     },

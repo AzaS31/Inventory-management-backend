@@ -1,9 +1,9 @@
 import { inventoryService } from "./inventoryService.js";
 
 export const inventoryController = {
-    async getAll(req, res, next) {
+    async getLatest(req, res, next) {
         try {
-            const inventories = await inventoryService.getAll();
+            const inventories = await inventoryService.getLatest();
             res.json(inventories);
         } catch (error) {
             next(error);
@@ -100,19 +100,22 @@ export const inventoryController = {
 
     async deleteById(req, res, next) {
         try {
-            await inventoryService.delete(req.params.id, req.user.id);
+            const { id } = req.params;
+            const isAdmin = req.user.role?.name === 'ADMIN';
+            await inventoryService.delete(id, req.user.id, isAdmin);
             res.json({ message: "Inventory deleted successfully" });
         } catch (error) {
             next(error);
         }
     },
 
-     async deleteBatch(req, res, next) {
+    async deleteBatch(req, res, next) {
         try {
             const { ids } = req.body;
             const userId = req.user.id;
+            const userRole = req.user.role?.name;
 
-            const result = await inventoryService.deleteBatch(ids, userId);
+            const result = await inventoryService.deleteBatch(ids, userId, userRole);
             res.json(result);
         } catch (error) {
             next(error);

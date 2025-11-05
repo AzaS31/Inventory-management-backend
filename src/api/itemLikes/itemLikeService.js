@@ -1,46 +1,32 @@
-import prisma from "../../config/database.js";
+import { itemLikeRepository } from "./itemLikeRepository.js";
 import { NotFoundError, BadRequestError } from "../../utils/errors.js";
 
 export const itemLikeService = {
     async toggleLike(itemId, userId) {
-        if (!itemId || !userId) {
-            throw new BadRequestError("Item ID and User ID are required.");
-        }
+        if (!itemId || !userId) throw new BadRequestError("Item ID and User ID are required.");
 
-        const item = await prisma.item.findUnique({ where: { id: itemId } });
-        if (!item) {
-            throw new NotFoundError("Item not found.");
-        }
+        const item = await itemLikeRepository.findItemById(itemId);
+        if (!item) throw new NotFoundError("Item not found.");
 
-        const existingLike = await prisma.itemLike.findUnique({
-            where: { itemId_userId: { itemId, userId } },
-        });
+        const existingLike = await itemLikeRepository.findLike(itemId, userId);
 
         if (existingLike) {
-            await prisma.$transaction([
-                prisma.itemLike.delete({ where: { id: existingLike.id } }),
-                prisma.item.update({
-                    where: { id: itemId },
-                    data: { likesCount: { decrement: 1 } },
-                }),
+            await itemLikeRepository.runTransaction([
+                itemLikeRepository.deleteLike(existingLike.id),
+                itemLikeRepository.decrementItemLikes(itemId),
             ]);
             return { message: "Unliked successfully.", liked: false };
         } else {
-            await prisma.$transaction([
-                prisma.itemLike.create({ data: { itemId, userId } }),
-                prisma.item.update({
-                    where: { id: itemId },
-                    data: { likesCount: { increment: 1 } },
-                }),
+            await itemLikeRepository.runTransaction([
+                itemLikeRepository.createLike(itemId, userId),
+                itemLikeRepository.incrementItemLikes(itemId),
             ]);
             return { message: "Liked successfully.", liked: true };
         }
     },
 
     async isItemLikedByUser(itemId, userId) {
-        const like = await prisma.itemLike.findUnique({
-            where: { itemId_userId: { itemId, userId } },
-        });
+        const like = await itemLikeRepository.findLike(itemId, userId);
         return !!like;
     },
 };

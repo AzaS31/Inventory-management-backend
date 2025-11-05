@@ -1,39 +1,20 @@
-import prisma from "../../config/database.js";
+import { itemRepository } from "./itemRepository.js";
 import { generateCustomId } from "../../utils/customIdGenerator.js";
-import { ConflictError, NotFoundError } from "../../utils/errors.js";
+import { NotFoundError, ConflictError } from "../../utils/errors.js";
 
 export const itemService = {
     async getAll(inventoryId) {
-        const items = await prisma.item.findMany({
-            where: { inventoryId },
-            include: {
-                customValues: {
-                    include: { customField: { select: { name: true, type: true } } },
-                },
-                creator: { select: { username: true } },
-                _count: { select: { likes: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
-        return items;
+        return itemRepository.findAllByInventory(inventoryId);
     },
 
     async getById(itemId, include = {}) {
-        const item = await prisma.item.findUnique({
-            where: { id: itemId },
-            include,
-        });
-
+        const item = await itemRepository.findById(itemId, include);
         if (!item) throw new NotFoundError(`Item with ID ${itemId} not found.`);
         return item;
     },
 
     async create(inventoryId, creatorId, itemData, customFieldValues) {
-        const inventory = await prisma.inventory.findUnique({
-            where: { id: inventoryId },
-            select: { customIdFormat: true },
-        });
-
+        const inventory = await itemRepository.findInventory(inventoryId);
         if (!inventory) throw new NotFoundError("Inventory not found.");
 
         const customIdFormat =
@@ -50,21 +31,10 @@ export const itemService = {
             customId = await generateCustomId(inventoryId, customIdFormat);
 
             try {
-                const newItem = await prisma.item.create({
-                    data: {
-                        ...itemData,
-                        inventoryId,
-                        customId,
-                        creatorId,
-                        customValues: {
-                            create: customFieldValues.map(cv => ({
-                                customFieldId: cv.customFieldId,
-                                value: cv.value,
-                            })),
-                        },
-                    },
-                });
-
+                const newItem = await itemRepository.create(
+                    { ...itemData, inventoryId, creatorId, customId },
+                    customFieldValues
+                );
                 return newItem;
             } catch (error) {
                 if (error.code === "P2002" && error.meta?.target?.includes("inventoryId_customId")) {
@@ -80,26 +50,7 @@ export const itemService = {
 
     async update(itemId, expectedVersion, updateData, customFieldValues) {
         try {
-            const updatedItem = await prisma.item.update({
-                where: {
-                    id: itemId,
-                    version: expectedVersion,
-                },
-                data: {
-                    ...updateData,
-                    version: { increment: 1 },
-                    customValues: {
-                        upsert: customFieldValues.map(cv => ({
-                            where: {
-                                itemId_customFieldId: { itemId, customFieldId: cv.customFieldId },
-                            },
-                            update: { value: cv.value },
-                            create: { customFieldId: cv.customFieldId, value: cv.value },
-                        })),
-                    },
-                },
-            });
-            return updatedItem;
+            return await itemRepository.update(itemId, expectedVersion, updateData, customFieldValues);
         } catch (error) {
             if (error.code === "P2025") {
                 throw new ConflictError(
@@ -119,27 +70,15 @@ export const itemService = {
 
     async delete(itemId) {
         try {
-            await prisma.item.delete({
-                where: { id: itemId },
-            });
+            await itemRepository.delete(itemId);
         } catch (error) {
-            if (error.code === "P2025") {
-                throw new NotFoundError(`Item with ID ${itemId} not found.`);
-            }
+            if (error.code === "P2025") throw new NotFoundError(`Item with ID ${itemId} not found.`);
             throw error;
         }
     },
 
     async deleteBatch(inventoryId, itemIds = []) {
         if (!Array.isArray(itemIds) || itemIds.length === 0) return { count: 0 };
-
-        const deleted = await prisma.item.deleteMany({
-            where: {
-                id: { in: itemIds },
-                inventoryId,
-            },
-        });
-
-        return deleted; 
+        return itemRepository.deleteMany(inventoryId, itemIds);
     },
 };

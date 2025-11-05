@@ -1,4 +1,4 @@
-import prisma from "../../config/database.js";
+import { customFieldRepository } from "./customFieldRepository.js";
 import { BadRequestError, NotFoundError, ConflictError } from "../../utils/errors.js";
 
 export const customFieldService = {
@@ -8,18 +8,14 @@ export const customFieldService = {
     }
 
     try {
-      const newField = await prisma.customField.create({
-        data: {
-          inventoryId,
-          name: data.name,
-          description: data.description,
-          type: data.type,
-          showInTable: data.showInTable ?? true,
-          order: data.order,
-        },
+      return await customFieldRepository.create({
+        inventoryId,
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        showInTable: data.showInTable,
+        order: data.order,
       });
-
-      return newField;
     } catch (error) {
       if (error.code === "P2002") {
         throw new ConflictError(`Custom field with name "${data.name}" already exists.`);
@@ -29,22 +25,12 @@ export const customFieldService = {
   },
 
   async getAll(inventoryId) {
-    const fields = await prisma.customField.findMany({
-      where: { inventoryId },
-      orderBy: { order: "asc" },
-    });
-
-    return fields;
+    return customFieldRepository.findAllByInventory(inventoryId);
   },
 
   async update(fieldId, data) {
     try {
-      const updated = await prisma.customField.update({
-        where: { id: fieldId },
-        data,
-      });
-
-      return updated;
+      return await customFieldRepository.updateById(fieldId, data);
     } catch (error) {
       if (error.code === "P2025") {
         throw new NotFoundError(`Custom field with ID ${fieldId} not found.`);
@@ -58,9 +44,7 @@ export const customFieldService = {
 
   async delete(fieldId) {
     try {
-      await prisma.customField.delete({
-        where: { id: fieldId },
-      });
+      await customFieldRepository.deleteById(fieldId);
       return { message: "Custom field deleted successfully." };
     } catch (error) {
       if (error.code === "P2025") {
