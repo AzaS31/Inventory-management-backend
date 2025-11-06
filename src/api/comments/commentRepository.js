@@ -1,14 +1,14 @@
 import prisma from "../../config/database.js";
 
 export const commentRepository = {
-    create({ content, inventoryId, authorId }) {
+    async create({ content, inventoryId, authorId }) {
         return prisma.comment.create({
             data: { content, inventoryId, authorId },
             include: { author: { select: { id: true, username: true } } },
         });
     },
 
-    findByInventoryId(inventoryId) {
+    async findByInventoryId(inventoryId) {
         return prisma.comment.findMany({
             where: { inventoryId },
             include: { author: { select: { id: true, username: true } } },
@@ -16,11 +16,11 @@ export const commentRepository = {
         });
     },
 
-    findById(commentId) {
+    async findById(commentId) {
         return prisma.comment.findUnique({ where: { id: commentId } });
     },
 
-    deleteById(commentId) {
+    async deleteById(commentId) {
         return prisma.comment.delete({ where: { id: commentId } });
     },
 };

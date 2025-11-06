@@ -1,11 +1,11 @@
 import prisma from "../../config/database.js";
 
 export const authRepository = {
-    findByEmail(email) {
+    async findByEmail(email) {
         return prisma.user.findUnique({ where: { email } });
     },
 
-    findById(id) {
+    async findById(id) {
         return prisma.user.findUnique({
             where: { id },
             select: {
@@ -17,7 +17,7 @@ export const authRepository = {
         });
     },
 
-    createUser({ username, email, password }) {
+    async createUser({ username, email, password }) {
         return prisma.user.create({
             data: { username, email, password },
         });

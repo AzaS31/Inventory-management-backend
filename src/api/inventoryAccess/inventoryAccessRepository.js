@@ -1,18 +1,18 @@
 import prisma from "../../config/database.js";
 
 export const inventoryAccessRepository = {
-    findByInventoryId(inventoryId) {
+    async findByInventoryId(inventoryId) {
         return prisma.inventoryAccess.findMany({
             where: { inventoryId },
             include: { user: { select: { id: true, username: true, email: true } } },
         });
     },
 
-    findUserByEmail(email) {
+    async findUserByEmail(email) {
         return prisma.user.findUnique({ where: { email } });
     },
 
-    upsertAccess(inventoryId, userId) {
+    async upsertAccess(inventoryId, userId) {
         return prisma.inventoryAccess.upsert({
             where: { inventoryId_userId: { inventoryId, userId } },
             update: {},
@@ -21,7 +21,7 @@ export const inventoryAccessRepository = {
         });
     },
 
-    deleteAccess(inventoryId, userId) {
+    async deleteAccess(inventoryId, userId) {
         return prisma.inventoryAccess.delete({
             where: { inventoryId_userId: { inventoryId, userId } },
         });

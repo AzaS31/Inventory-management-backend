@@ -1,7 +1,7 @@
 import prisma from "../../config/database.js";
 
 export const itemRepository = {
-    findAllByInventory(inventoryId) {
+    async findAllByInventory(inventoryId) {
         return prisma.item.findMany({
             where: { inventoryId },
             include: {
@@ -13,18 +13,18 @@ export const itemRepository = {
         });
     },
 
-    findById(itemId, include = {}) {
+    async findById(itemId, include = {}) {
         return prisma.item.findUnique({ where: { id: itemId }, include });
     },
 
-    findInventory(inventoryId) {
+    async findInventory(inventoryId) {
         return prisma.inventory.findUnique({
             where: { id: inventoryId },
             select: { customIdFormat: true },
         });
     },
 
-    create(itemData, customFieldValues) {
+    async create(itemData, customFieldValues) {
         return prisma.item.create({
             data: {
                 ...itemData,
@@ -38,7 +38,7 @@ export const itemRepository = {
         });
     },
 
-    update(itemId, expectedVersion, updateData, customFieldValues) {
+    async update(itemId, expectedVersion, updateData, customFieldValues) {
         const customValuesToUpsert = customFieldValues || [];
 
         return prisma.item.update({
@@ -60,11 +60,11 @@ export const itemRepository = {
         });
     },
 
-    delete(itemId) {
+    async delete(itemId) {
         return prisma.item.delete({ where: { id: itemId } });
     },
 
-    deleteMany(inventoryId, itemIds) {
+    async deleteMany(inventoryId, itemIds) {
         return prisma.item.deleteMany({
             where: { inventoryId, id: { in: itemIds } },
         });

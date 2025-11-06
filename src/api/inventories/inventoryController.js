@@ -137,4 +137,24 @@ export const inventoryController = {
             next(error);
         }
     },
+
+    async getAllSorted(req, res, next) {
+        try {
+            const { sortBy, order } = req.query;
+            const inventories = await inventoryService.getSortedInventories(sortBy, order);
+            res.json(inventories);
+        } catch (err) {
+            next(err);
+        }
+    },
+
+    async getAllSorted(req, res, next) {
+        try {
+            const { sortBy, order } = req.query;
+            const inventories = await inventoryService.getSortedInventories(sortBy, order);
+            res.json(inventories);
+        } catch (err) {
+            next(err);
+        }
+    },
 }

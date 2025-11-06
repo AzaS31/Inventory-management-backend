@@ -1,33 +1,33 @@
 import prisma from "../../config/database.js";
 
 export const userRepository = {
-    findAll() {
+    async findAll() {
         return prisma.user.findMany({
             select: { id: true, username: true, email: true, isActive: true, roleId: true },
         });
     },
 
-    updateRoleBatch(userIds, roleId) {
+    async updateRoleBatch(userIds, roleId) {
         return prisma.user.updateMany({
             where: { id: { in: userIds } },
             data: { roleId },
         });
     },
 
-    toggleActiveStatus(userIds, isActive) {
+    async toggleActiveStatus(userIds, isActive) {
         return prisma.user.updateMany({
             where: { id: { in: userIds } },
             data: { isActive },
         });
     },
 
-    deleteBatch(userIds) {
+    async deleteBatch(userIds) {
         return prisma.user.deleteMany({
             where: { id: { in: userIds } },
         });
     },
 
-    findById(id) {
+    async findById(id) {
         return prisma.user.findUnique({
             where: { id },
             select: {

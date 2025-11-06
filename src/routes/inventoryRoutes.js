@@ -10,6 +10,7 @@ router.get("/my", requireAuth, inventoryController.getMy);
 router.get("/shared", requireAuth, inventoryController.getAccessibleToMe);
 router.get("/user/:userId", inventoryController.getUserInventoriesById);
 router.get("/user/:userId/shared", inventoryController.getUserAccessibleInventoriesById);
+router.get("/sorted", inventoryController.getAllSorted);
 router.get("/:id", inventoryController.getInventoryById);
 
 router.post("/", requireAuth, inventoryController.create);

@@ -98,4 +98,12 @@ export const inventoryService = {
 
         return inventoryRepository.update(id, { customIdFormat, updatedAt: new Date() });
     },
+
+    async getSortedInventories(sortBy, order) {
+        if (!sortBy || !order) {
+            throw new BadRequestError("sortBy and order are required");
+        }
+
+        return inventoryRepository.findAllSorted(sortBy, order);
+    },
 };

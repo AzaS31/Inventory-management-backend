@@ -1,7 +1,7 @@
 import prisma from "../../config/database.js";
 
 export const searchRepository = {
-    findInventories(query, isGuest) {
+    async findInventories(query, isGuest) {
         return prisma.inventory.findMany({
             where: {
                 AND: [
@@ -24,7 +24,7 @@ export const searchRepository = {
         });
     },
 
-    findItems(query, isGuest) {
+    async findItems(query, isGuest) {
         return prisma.item.findMany({
             where: {
                 OR: [
