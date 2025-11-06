@@ -91,8 +91,11 @@ export const inventoryController = {
 
     async update(req, res, next) {
         try {
-            const inventory = await inventoryService.update(req.params.id, req.body, req.user);
-            res.json(inventory);
+            const { id } = req.params;
+            const { expectedVersion, ...updates } = req.body;
+
+            const updatedInventory = await inventoryService.update(id, expectedVersion, updates, req.user);
+            res.json(updatedInventory);
         } catch (error) {
             next(error);
         }

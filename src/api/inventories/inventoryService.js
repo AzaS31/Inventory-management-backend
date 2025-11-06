@@ -36,7 +36,7 @@ export const inventoryService = {
         }
     },
 
-    async update(id, updates, user) {
+    async update(id, expectedVersion, updates, user) {
         const existing = await inventoryRepository.findById(id);
         if (!existing) throw new NotFoundError("Inventory not found");
 
@@ -46,8 +46,24 @@ export const inventoryService = {
         if (!isOwner && !isAdmin)
             throw new UnauthorizedError("You are not authorized to edit this inventory.");
 
-        const data = { ...updates, updatedAt: new Date() };
-        return inventoryRepository.update(id, data);
+        try {
+            const data = {
+                ...updates,
+                updatedAt: new Date(),
+            };
+
+            return await inventoryRepository.update(id, expectedVersion, data);
+        } catch (error) {
+            if (error.code === "P2025") {
+                throw new ConflictError("The inventory has been modified by another user. Please reload and try again.");
+            }
+
+            if (error.code === "P2002" && error.meta?.target?.includes("title")) {
+                throw new ConflictError(`Inventory title '${updates.title}' already exists.`);
+            }
+
+            throw error;
+        }
     },
 
     async delete(id, userId, isAdmin = false) {

@@ -85,10 +85,16 @@ export const inventoryRepository = {
         });
     },
 
-    update(id, data) {
+    update(id, expectedVersion, data) {
         return prisma.inventory.update({
-            where: { id },
-            data,
+            where: {
+                id,
+                version: expectedVersion, 
+            },
+            data: {
+                ...data,
+                version: { increment: 1 }, 
+            },
             include: {
                 owner: { select: { username: true } },
                 category: { select: { name: true } },
