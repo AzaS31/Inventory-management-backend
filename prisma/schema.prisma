@@ -102,7 +102,11 @@ model Item {
 
   customId    String
   name        String
-  description String?
+  description String
+
+  author      String
+  year        Int
+  pages       Int
 
   likes        ItemLike[]
   likesCount   Int                @default(0)
@@ -199,7 +203,7 @@ model Tag {
 
 model InventoryTag {
   inventoryId String
-  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   tagId       String
   tag         Tag       @relation(fields: [tagId], references: [id])
 

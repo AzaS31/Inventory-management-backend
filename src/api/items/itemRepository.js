@@ -39,13 +39,18 @@ export const itemRepository = {
     },
 
     update(itemId, expectedVersion, updateData, customFieldValues) {
+        const customValuesToUpsert = customFieldValues || [];
+
         return prisma.item.update({
-            where: { id: itemId, version: expectedVersion },
+            where: {
+                id: itemId,
+                version: expectedVersion 
+            },
             data: {
                 ...updateData,
                 version: { increment: 1 },
                 customValues: {
-                    upsert: customFieldValues.map(cv => ({
+                    upsert: customValuesToUpsert.map(cv => ({
                         where: { itemId_customFieldId: { itemId, customFieldId: cv.customFieldId } },
                         update: { value: cv.value },
                         create: { customFieldId: cv.customFieldId, value: cv.value },

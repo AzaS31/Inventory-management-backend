@@ -36,14 +36,15 @@ export const inventoryService = {
         }
     },
 
-    async update(id, updates, userId) {
+    async update(id, updates, user) {
         const existing = await inventoryRepository.findById(id);
         if (!existing) throw new NotFoundError("Inventory not found");
 
-        const isOwner = existing.ownerId === userId;
-        const hasEditAccess = existing.accesses.some(a => a.user.id === userId);
+        const isOwner = existing.ownerId === user.id;
+        const isAdmin = user.role?.name === "ADMIN";
 
-        if (!isOwner && !hasEditAccess) throw new UnauthorizedError("You are not authorized to edit this inventory.");
+        if (!isOwner && !isAdmin)
+            throw new UnauthorizedError("You are not authorized to edit this inventory.");
 
         const data = { ...updates, updatedAt: new Date() };
         return inventoryRepository.update(id, data);
@@ -54,18 +55,16 @@ export const inventoryService = {
         if (!existing) throw new NotFoundError("Inventory not found");
         if (!isAdmin && existing.ownerId !== userId) throw new UnauthorizedError("You are not authorized to delete this inventory.");
 
-        await inventoryRepository.deleteInventoryTags([id]);
         return inventoryRepository.deleteById(id);
     },
 
     async deleteBatch(inventoryIds, userId, userRole) {
-        const inventories = await inventoryRepository.findByOwner(userId); // or findMany by ids
+        const inventories = await inventoryRepository.findByOwner(userId);
         if (userRole !== "ADMIN") {
             const unauthorized = inventories.some(inv => inventoryIds.includes(inv.id) && inv.ownerId !== userId);
             if (unauthorized) throw new UnauthorizedError("You are not authorized to delete some of these inventories.");
         }
 
-        await inventoryRepository.deleteInventoryTags(inventoryIds);
         const result = await inventoryRepository.deleteBatch(inventoryIds);
         if (result.count === 0) throw new NotFoundError("No inventories were deleted.");
 

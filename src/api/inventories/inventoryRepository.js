@@ -103,8 +103,4 @@ export const inventoryRepository = {
     deleteBatch(ids) {
         return prisma.inventory.deleteMany({ where: { id: { in: ids } } });
     },
-
-    deleteInventoryTags(ids) {
-        return prisma.inventoryTag.deleteMany({ where: { inventoryId: { in: ids } } });
-    },
 };
