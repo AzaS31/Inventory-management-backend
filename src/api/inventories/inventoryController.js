@@ -157,4 +157,14 @@ export const inventoryController = {
             next(err);
         }
     },
+
+    async getFilteredByCategory(req, res, next) {
+        try {
+            const { userId, categoryId } = req.query;
+            const inventories = await inventoryService.getFilteredInventoriesByCategory(userId, categoryId);
+            res.json(inventories);
+        } catch (err) {
+            next(err);
+        }
+    },
 }

@@ -96,7 +96,7 @@ export const inventoryService = {
 
         if (!isOwner && !hasEditAccess) throw new UnauthorizedError("You are not authorized to update custom ID format.");
 
-        return inventoryRepository.update(id, { customIdFormat, updatedAt: new Date() });
+        return inventoryRepository.update(id, existing.version, { customIdFormat, updatedAt: new Date() });
     },
 
     async getSortedInventories(sortBy, order) {
@@ -105,5 +105,9 @@ export const inventoryService = {
         }
 
         return inventoryRepository.findAllSorted(sortBy, order);
+    },
+
+    async getFilteredInventoriesByCategory(userId, categoryId) {
+        return inventoryRepository.findFilteredByCategory(userId, categoryId );
     },
 };

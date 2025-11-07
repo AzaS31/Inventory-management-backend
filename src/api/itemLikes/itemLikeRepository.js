@@ -1,27 +1,27 @@
 import prisma from "../../config/database.js";
 
 export const itemLikeRepository = {
-    async findItemById(itemId) {
+    findItemById(itemId) {
         return prisma.item.findUnique({ where: { id: itemId } });
     },
 
-    async findLike(itemId, userId) {
+    findLike(itemId, userId) {
         return prisma.itemLike.findUnique({ where: { itemId_userId: { itemId, userId } } });
     },
 
-    async createLike(itemId, userId) {
+    createLike(itemId, userId) {
         return prisma.itemLike.create({ data: { itemId, userId } });
     },
 
-    async deleteLike(id) {
+    deleteLike(id) {
         return prisma.itemLike.delete({ where: { id } });
     },
 
-    async incrementItemLikes(itemId) {
+    incrementItemLikes(itemId) {
         return prisma.item.update({ where: { id: itemId }, data: { likesCount: { increment: 1 } } });
     },
 
-    async decrementItemLikes(itemId) {
+    decrementItemLikes(itemId) {
         return prisma.item.update({ where: { id: itemId }, data: { likesCount: { decrement: 1 } } });
     },
 

@@ -85,14 +85,16 @@ export const inventoryRepository = {
         });
     },
 
-    async update(id, expectedVersion, data) {
+    async update(id, expectedVersion, dataToUpdate) {
         return prisma.inventory.update({
             where: {
                 id,
-                version: expectedVersion,
+                version: {
+                    equals: expectedVersion
+                },
             },
             data: {
-                ...data,
+                ...dataToUpdate, 
                 version: { increment: 1 },
             },
             include: {
@@ -115,7 +117,7 @@ export const inventoryRepository = {
 
         const orderObj = sortBy === "category"
             ? { category: { name: validOrder } }
-            : { [sortBy]: validOrder }; 
+            : { [sortBy]: validOrder };
 
         return prisma.inventory.findMany({
             include: {
@@ -125,5 +127,19 @@ export const inventoryRepository = {
             },
             orderBy: orderObj,
         });
-    }
+    },
+
+    async findFilteredByCategory(userId, categoryId) {
+        return prisma.inventory.findMany({
+            where: {
+                ownerId: userId,
+                categoryId: categoryId || undefined,
+            },
+            include: {
+                owner: { select: { username: true } },
+                category: { select: { name: true } },
+                _count: { select: { items: true, comments: true } },
+            },
+        });
+    },
 };

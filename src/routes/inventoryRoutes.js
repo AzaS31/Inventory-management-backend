@@ -11,8 +11,9 @@ router.get("/shared", requireAuth, inventoryController.getAccessibleToMe);
 router.get("/user/:userId", inventoryController.getUserInventoriesById);
 router.get("/user/:userId/shared", inventoryController.getUserAccessibleInventoriesById);
 router.get("/sorted", inventoryController.getAllSorted);
-router.get("/:id", inventoryController.getInventoryById);
+router.get("/filtered", inventoryController.getFilteredByCategory);
 
+router.get("/:id", inventoryController.getInventoryById);
 router.post("/", requireAuth, inventoryController.create);
 router.put("/:id", requireAuth, inventoryController.update);
 router.put("/:id/custom-id-format", requireAuth, inventoryController.updateCustomIdFormat);
