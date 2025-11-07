@@ -7,7 +7,7 @@ const router = express.Router();
 router.post("/add", requireAuth, inventoryAccessController.addAccess);
 router.get("/search", requireAuth, inventoryAccessController.searchUsers);
 
-router.get("/:inventoryId", requireAuth, inventoryAccessController.getAccessList);
-router.delete("/:inventoryId/:userId", requireAuth, inventoryAccessController.removeAccess);
+router.get("/access/:inventoryId", requireAuth, inventoryAccessController.getAccessList);
+router.delete("/:inventoryId/user/:userId", requireAuth, inventoryAccessController.removeAccess);
 
 export default router;
