@@ -7,16 +7,17 @@ export const inventoryAccessService = {
     return inventoryAccessRepository.findByInventoryId(inventoryId);
   },
 
-  async grantAccessByEmail(inventoryId, email) {
-    if (!email) throw new BadRequestError("Email is required to grant access.");
+  async grantAccess(inventoryId, identifier) {
+    if (!identifier) throw new BadRequestError("Email or username is required.");
 
-    const user = await inventoryAccessRepository.findUserByEmail(email);
+    const user = await inventoryAccessRepository.findUserByEmailOrUsername(identifier);
     if (!user) throw new NotFoundError("User not found.");
 
     try {
       return inventoryAccessRepository.upsertAccess(inventoryId, user.id);
     } catch (error) {
-      if (error.code === "P2002") throw new ConflictError("This user already has access to the inventory.");
+      if (error.code === "P2002")
+        throw new ConflictError("This user already has access to the inventory.");
       throw error;
     }
   },
@@ -29,5 +30,11 @@ export const inventoryAccessService = {
       if (error.code === "P2025") throw new NotFoundError("Access not found or already revoked.");
       throw error;
     }
+  },
+
+  async searchUsers(query) {
+    if (!query || query.length < 2)
+      return [];
+    return inventoryAccessRepository.searchUsersByQuery(query);
   },
 };

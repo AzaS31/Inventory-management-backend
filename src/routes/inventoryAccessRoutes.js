@@ -4,7 +4,9 @@ import { inventoryAccessController } from "../api/inventoryAccess/inventoryAcces
 
 const router = express.Router();
 
-router.post("/", requireAuth, inventoryAccessController.addAccess);
+router.post("/add", requireAuth, inventoryAccessController.addAccess);
+router.get("/search", requireAuth, inventoryAccessController.searchUsers);
+
 router.get("/:inventoryId", requireAuth, inventoryAccessController.getAccessList);
 router.delete("/:inventoryId/:userId", requireAuth, inventoryAccessController.removeAccess);
 

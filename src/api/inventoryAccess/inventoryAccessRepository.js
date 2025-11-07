@@ -8,8 +8,28 @@ export const inventoryAccessRepository = {
         });
     },
 
-    async findUserByEmail(email) {
-        return prisma.user.findUnique({ where: { email } });
+    async findUserByEmailOrUsername(identifier) {
+        return prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: identifier },
+                    { username: identifier },
+                ],
+            },
+        });
+    },
+
+    async searchUsersByQuery(query) {
+        return prisma.user.findMany({
+            where: {
+                OR: [
+                    { username: { startsWith: query, mode: "insensitive" } },
+                    { email: { startsWith: query, mode: "insensitive" } },
+                ],
+            },
+            select: { id: true, username: true, email: true },
+            take: 10, 
+        });
     },
 
     async upsertAccess(inventoryId, userId) {
