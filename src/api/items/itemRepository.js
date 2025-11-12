@@ -13,8 +13,18 @@ export const itemRepository = {
         });
     },
 
-    async findById(itemId, include = {}) {
-        return prisma.item.findUnique({ where: { id: itemId }, include });
+    async findById(itemId, inventoryId) {
+        return prisma.item.findFirst({
+            where: {
+                id: itemId,
+                inventoryId,
+            },
+            include: {
+                customValues: { include: { customField: true } },
+                inventory: true,
+                creator: { select: { username: true } },
+            },
+        });
     },
 
     async findInventory(inventoryId) {
@@ -44,7 +54,7 @@ export const itemRepository = {
         return prisma.item.update({
             where: {
                 id: itemId,
-                version: expectedVersion 
+                version: expectedVersion
             },
             data: {
                 ...updateData,

@@ -7,9 +7,9 @@ export const itemService = {
         return itemRepository.findAllByInventory(inventoryId);
     },
 
-    async getById(itemId, include = {}) {
-        const item = await itemRepository.findById(itemId, include);
-        if (!item) throw new NotFoundError(`Item with ID ${itemId} not found.`);
+    async getById(itemId, inventoryId) {
+        const item = await itemRepository.findById(itemId, inventoryId);
+        if (!item) throw new NotFoundError(`Item with ID ${itemId} not found in inventory ${inventoryId}.`);
         return item;
     },
 

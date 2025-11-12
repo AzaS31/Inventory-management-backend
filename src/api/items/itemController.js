@@ -13,14 +13,8 @@ export const itemController = {
 
     async getById(req, res, next) {
         try {
-            const { id } = req.params;
-            const item = await itemService.getById(id, {
-                customValues: {
-                    include: { customField: true }
-                },
-                inventory: true,
-                creator: { select: { username: true } },
-            });
+            const { inventoryId, id } = req.params;
+            const item = await itemService.getById(id, inventoryId);
             return res.json(item);
         } catch (err) {
             next(err);
@@ -65,7 +59,7 @@ export const itemController = {
     async deleteBatch(req, res, next) {
         try {
             const { inventoryId } = req.params;
-            const { ids } = req.body; 
+            const { ids } = req.body;
             const result = await itemService.deleteBatch(inventoryId, ids);
             return res.json({ deletedCount: result.count });
         } catch (err) {
