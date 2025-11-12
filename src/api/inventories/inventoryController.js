@@ -130,8 +130,9 @@ export const inventoryController = {
             const { id } = req.params;
             const { customIdFormat } = req.body;
             const userId = req.user.id;
-
-            const updated = await inventoryService.updateCustomIdFormat(id, customIdFormat, userId);
+            const userRole = req.user.role?.name;
+            
+            const updated = await inventoryService.updateCustomIdFormat(id, customIdFormat, userId, userRole);
             res.json(updated);
         } catch (error) {
             next(error);

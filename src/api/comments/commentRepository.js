@@ -12,7 +12,7 @@ export const commentRepository = {
         return prisma.comment.findMany({
             where: { inventoryId },
             include: { author: { select: { id: true, username: true } } },
-            orderBy: { createdAt: "desc" },
+            orderBy: { createdAt: "asc" },
         });
     },
 

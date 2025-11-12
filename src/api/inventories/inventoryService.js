@@ -29,7 +29,7 @@ export const inventoryService = {
         if (!title || !ownerId) throw new BadRequestError("Title and ownerId are required.");
 
         try {
-            return await inventoryRepository.create({ title, ownerId, description, isPublic, categoryId: categoryId || null, customIdFormat });
+            return await inventoryRepository.create({ title, ownerId, description, isPublic, categoryId, customIdFormat });
         } catch (error) {
             if (error.code === "P2002") throw new ConflictError("Inventory with the same title already exists.");
             throw error;
@@ -87,16 +87,21 @@ export const inventoryService = {
         return { message: `Deleted ${result.count} inventories successfully.` };
     },
 
-    async updateCustomIdFormat(id, customIdFormat, userId) {
+    async updateCustomIdFormat(id, customIdFormat, userId, userRole) {
         const existing = await inventoryRepository.findById(id);
         if (!existing) throw new NotFoundError("Inventory not found");
-
+        
         const isOwner = existing.ownerId === userId;
-        const hasEditAccess = existing.accesses.some(a => a.user.id === userId);
+        const isAdmin = userRole === "ADMIN";
 
-        if (!isOwner && !hasEditAccess) throw new UnauthorizedError("You are not authorized to update custom ID format.");
+        if (!isOwner && !isAdmin) {
+            throw new UnauthorizedError("Only the owner or an admin can update custom ID format.");
+        }
 
-        return inventoryRepository.update(id, existing.version, { customIdFormat, updatedAt: new Date() });
+        return inventoryRepository.update(id, existing.version, {
+            customIdFormat,
+            updatedAt: new Date(),
+        });
     },
 
     async getSortedInventories(sortBy, order) {
@@ -108,6 +113,6 @@ export const inventoryService = {
     },
 
     async getFilteredInventoriesByCategory(userId, categoryId) {
-        return inventoryRepository.findFilteredByCategory(userId, categoryId );
+        return inventoryRepository.findFilteredByCategory(userId, categoryId);
     },
 };
