@@ -24,6 +24,7 @@ model User {
   roleId       Int               @default(1)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+  salesforceId String?          @unique
   comments     Comment[]
   inventories  Inventory[]
   accesses     InventoryAccess[]

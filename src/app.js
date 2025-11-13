@@ -16,7 +16,9 @@ import itemLikeRoutes from "./routes/itemLikeRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
 import tagRoutes from "./routes/tagRoutes.js";
+import salesforceRoutes from "./routes/salesforceRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+
 
 config();
 const app = express();
@@ -60,6 +62,7 @@ app.use("/api/item-likes", itemLikeRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/tags", tagRoutes);
+app.use("/api/salesforce", salesforceRoutes);
 
 app.use(errorHandler);
 
