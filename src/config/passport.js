@@ -2,9 +2,6 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import prisma from "./database.js";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 // ===== Google Strategy =====
 passport.use(

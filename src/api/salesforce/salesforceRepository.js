@@ -1,32 +1,47 @@
-import { config } from 'dotenv';
 import axios from 'axios';
+import prisma from '../../config/database.js';
 
-config();
-
-const headers = {
-    Authorization: `Bearer ${process.env.SALESFORCE_ACCESS_TOKEN}`,
+const getHeaders = (accessToken) => ({
+    Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
-};
+});
 
-const instanceUrl = process.env.SALESFORCE_INSTANCE_URL;
+const InstanceUrl = process.env.SALESFORCE_INSTANCE_URL;
 
 export const salesforceRepository = {
-    async createAccount(companyName) {
-        const url = `${instanceUrl}/services/data/v65.0/sobjects/Account/`;
-        const response = await axios.post(url, { Name: companyName }, { headers });
+    async createAccount(accessToken, companyName) {
+        const url = `${InstanceUrl}/services/data/v65.0/sobjects/Account/`;
+        const response = await axios.post(url, { Name: companyName }, { headers: getHeaders(accessToken) });
         return response.data.id;
     },
 
-    async createContact(contactData) {
-        const url = `${instanceUrl}/services/data/v65.0/sobjects/Contact/`;
-        const response = await axios.post(url, contactData, { headers });
+    async createContact(accessToken, contactData) {
+        const url = `${InstanceUrl}/services/data/v65.0/sobjects/Contact/`;
+        const response = await axios.post(url, contactData, { headers: getHeaders(accessToken) });
         return response.data.id;
     },
 
-    async findAccountByName(name) {
+    async findAccountByName(accessToken, name) {
         const query = `SELECT Id FROM Account WHERE Name = '${name}' LIMIT 1`;
-        const url = `${instanceUrl}/services/data/v65.0/query/?q=${encodeURIComponent(query)}`;
-        const response = await axios.get(url, { headers });
+        const url = `${InstanceUrl}/services/data/v65.0/query/?q=${encodeURIComponent(query)}`;
+        const response = await axios.get(url, { headers: getHeaders(accessToken) });
         return response.data.records[0]?.Id || null;
     },
+
+    async deleteContact(accessToken, contactId) {
+        const url = `${InstanceUrl}/services/data/v65.0/sobjects/Contact/${contactId}`;
+        const headers = {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        };
+        await axios.delete(url, { headers });
+    },
+
+    async upsertToken(userId, { accessToken, refreshToken, expiresAt }) {
+        await prisma.salesforceToken.upsert({
+            where: { userId },
+            update: { accessToken, refreshToken, expiresAt },
+            create: { userId, accessToken, refreshToken, expiresAt },
+        });
+    }
 };

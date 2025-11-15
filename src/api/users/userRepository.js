@@ -52,4 +52,15 @@ export const userRepository = {
             },
         });
     },
+
+    async findByEmail(email) {
+        return prisma.user.findUnique({ where: { email } });
+    },
+
+    async updateSalesforceId(email, salesforceId) {
+        return prisma.user.update({
+            where: { email },
+            data: { salesforceId },
+        });
+    }
 };

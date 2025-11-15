@@ -1,15 +1,13 @@
-import prisma from "../../config/database.js";
+import { userRepository } from '../users/userRepository.js';
 import { salesforceRepository } from './salesforceRepository.js';
-import { config } from 'dotenv';
+import { tokenService } from './tokenService.js';
+import axios from 'axios';
 
-config();
+const company = process.env.SALESFORCE_MAIN_COMPANY;
 
 export const salesforceService = {
     async createAccountWithContact(userData) {
-        const localUser = await prisma.user.findUnique({
-            where: { email: userData.email },
-        });
-
+        const localUser = await userRepository.findByEmail(userData.email);
         if (localUser?.salesforceId) {
             return {
                 alreadySynced: true,
@@ -18,9 +16,11 @@ export const salesforceService = {
             };
         }
 
-        let accountId = await salesforceRepository.findAccountByName(process.env.SALESFORCE_MAIN_COMPANY);
+        const accessToken = await tokenService.getValidAccessToken(localUser.id);
+
+        let accountId = await salesforceRepository.findAccountByName(accessToken, company);
         if (!accountId) {
-            accountId = await salesforceRepository.createAccount(process.env.SALESFORCE_MAIN_COMPANY);
+            accountId = await salesforceRepository.createAccount(accessToken, company);
         }
 
         const contactPayload = {
@@ -33,13 +33,53 @@ export const salesforceService = {
             MobilePhone: userData.mobilePhone,
         };
 
-        const contactId = await salesforceRepository.createContact(contactPayload);
+        const contactId = await salesforceRepository.createContact(accessToken, contactPayload);
 
-        await prisma.user.update({
-            where: { email: userData.email },
-            data: { salesforceId: contactId },
-        });
+        await userRepository.updateSalesforceId(userData.email, contactId);
 
         return { accountId, contactId, alreadySynced: false };
     },
-};
+
+    async unsyncSalesforceContact(userEmail) {
+        const localUser = await userRepository.findByEmail(userEmail);
+        if (!localUser?.salesforceId) {
+            return { alreadyUnsynced: true };
+        }
+
+        const accessToken = await tokenService.getValidAccessToken(localUser.id);
+
+        try {
+            await salesforceRepository.deleteContact(accessToken, localUser.salesforceId);
+        } catch (error) {
+            console.warn('Salesforce contact deletion failed:', error.response?.data || error.message);
+        }
+
+        await userRepository.updateSalesforceId(userEmail, null);
+
+        return { alreadyUnsynced: false };
+    },
+
+    async exchangeCodeForToken(code, userId) {
+        const params = new URLSearchParams({
+            grant_type: "authorization_code",
+            code,
+            client_id: process.env.SF_CLIENT_ID,
+            client_secret: process.env.SF_CLIENT_SECRET,
+            redirect_uri: process.env.SF_REDIRECT_URI,
+        });
+
+        const response = await axios.post(process.env.SF_TOKEN_URL, params, {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        });
+
+        const { access_token, refresh_token, issued_at, expires_in } = response.data;
+
+        const expiresAt = new Date(Number(issued_at) + (expires_in || 3600) * 1000);
+
+        await salesforceRepository.upsertToken(userId, {
+            accessToken: access_token,
+            refreshToken: refresh_token,
+            expiresAt,
+        });
+    }
+}; 
