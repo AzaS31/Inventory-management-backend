@@ -1,5 +1,6 @@
 import { inventoryRepository } from "./inventoryRepository.js";
 import { BadRequestError, NotFoundError, UnauthorizedError, ConflictError } from "../../utils/errors.js";
+import { randomUUID } from "crypto";
 
 export const inventoryService = {
     async getLatest(limit = 10) {
@@ -90,7 +91,7 @@ export const inventoryService = {
     async updateCustomIdFormat(id, customIdFormat, userId, userRole) {
         const existing = await inventoryRepository.findById(id);
         if (!existing) throw new NotFoundError("Inventory not found");
-        
+
         const isOwner = existing.ownerId === userId;
         const isAdmin = userRole === "ADMIN";
 
@@ -115,4 +116,21 @@ export const inventoryService = {
     async getFilteredInventoriesByCategory(userId, categoryId) {
         return inventoryRepository.findFilteredByCategory(userId, categoryId);
     },
+
+    async generateApiToken(id, user) {
+        const inventory = await inventoryRepository.findById(id);
+        if (!inventory) throw new NotFoundError("Inventory not found");
+
+        const isOwner = inventory.ownerId === user.id;
+        const isAdmin = user.role?.name === "ADMIN";
+
+        if (!isOwner && !isAdmin)
+            throw new UnauthorizedError("You are not allowed to regenerate API token.");
+
+        const newToken = randomUUID();
+
+        return inventoryRepository.generateApiToken(id, newToken);
+    },
 };
+
+

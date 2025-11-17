@@ -13,6 +13,7 @@ router.get("/user/:userId", inventoryController.getUserInventoriesById);
 router.get("/sorted", inventoryController.getAllSorted);
 router.get("/filtered", inventoryController.getFilteredByCategory);
 
+router.post("/inventory/:id/api-token", requireAuth, inventoryController.generateApiToken);
 router.get("/inventory/:id", inventoryController.getInventoryById);
 router.post("/inventory/create", requireAuth, inventoryController.create);
 router.put("/inventory/:id", requireAuth, inventoryController.update);

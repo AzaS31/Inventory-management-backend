@@ -17,6 +17,7 @@ import commentRoutes from "./routes/commentRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
 import tagRoutes from "./routes/tagRoutes.js";
 import salesforceRoutes from "./routes/salesforceRoutes.js";
+import inventoryExternalRoutes from "./routes/inventoryExternalRoutes.js"
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 
@@ -63,6 +64,7 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/tags", tagRoutes);
 app.use("/api/salesforce", salesforceRoutes);
+app.use("/external/inventory", inventoryExternalRoutes);
 
 app.use(errorHandler);
 

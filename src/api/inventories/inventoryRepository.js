@@ -94,7 +94,7 @@ export const inventoryRepository = {
                 },
             },
             data: {
-                ...dataToUpdate, 
+                ...dataToUpdate,
                 version: { increment: 1 },
             },
             include: {
@@ -140,6 +140,18 @@ export const inventoryRepository = {
                 category: { select: { name: true } },
                 _count: { select: { items: true, comments: true } },
             },
+        });
+    },
+
+    async generateApiToken(id, newToken) {
+        return prisma.inventory.update({
+            where: { id },
+            data: { apiToken: newToken, updatedAt: new Date() },
+            select: {
+                id: true,
+                apiToken: true,
+                title: true
+            }
         });
     },
 };

@@ -47,6 +47,7 @@ model Category {
 model Inventory {
   id              String            @id @default(cuid())
   title           String
+  apiToken        String?           @unique
   description     String?
   version         Int               @default(1)
   ownerId         String

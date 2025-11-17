@@ -131,7 +131,7 @@ export const inventoryController = {
             const { customIdFormat } = req.body;
             const userId = req.user.id;
             const userRole = req.user.role?.name;
-            
+
             const updated = await inventoryService.updateCustomIdFormat(id, customIdFormat, userId, userRole);
             res.json(updated);
         } catch (error) {
@@ -164,6 +164,19 @@ export const inventoryController = {
             const { userId, categoryId } = req.query;
             const inventories = await inventoryService.getFilteredInventoriesByCategory(userId, categoryId);
             res.json(inventories);
+        } catch (err) {
+            next(err);
+        }
+    },
+
+    async generateApiToken(req, res, next) {
+        try {
+            const { id } = req.params;
+            const updated = await inventoryService.generateApiToken(id, req.user);
+            res.json({
+                message: "New API token generated",
+                apiToken: updated.apiToken
+            });
         } catch (err) {
             next(err);
         }
